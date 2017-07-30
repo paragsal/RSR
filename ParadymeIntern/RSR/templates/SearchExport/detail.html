@@ -6,6 +6,7 @@
 <h1 style = "font-family: Raleway, Arial">
     {{person.Name}}
 </h1>
+
 <div style = "float:left; width:40%;margin-left:-50px">
 	<section><b> Personal Info</b><br>
 	<table class = "table-fill">
@@ -23,11 +24,14 @@
      {% endfor %}
    </tbody>
  </table>
-
+	<br/>
+	<a href="{% url 'RSR:person-edit' person.pk %}" class="btn btn-default btn-file">Edit</a>
     </section>
 </div>
 
+
 <!--Right hand side all tables -->
+
 
 
 <div style = "float:right; width:60%;">
@@ -120,8 +124,8 @@
        <tr>
          <td style = "padding:14px;"class = "text-left">{{obj.SchoolID}}</td>
          <td style = "padding:14px;"class = "text-left"> {{obj.SchoolID.DegreeLevel}}</td>
-         <td style = "padding:14px;"class = "text-left"> {{obj.SchoolID.GradDate}}</td>
-         <td style = "padding:14px;"class = "text-left"> {{obj.Major}}</td>
+         <td style = "padding:14px;"class = "text-left"> {{obj.GradDate}}</td>
+         <td style = "padding:14px;"class = "text-left"> {{obj.MajorID}}</td>
          <td style = "padding:14px;"class = "text-left"> {{obj.GPA}}</td>
        </tr>
      {% empty %}
@@ -294,7 +298,7 @@
 
    </thead>
    <tbody class="table-hover">
-     {% for obj in club %}
+     {% for obj in clubs %}
        <tr>
          <td style = "padding:14px;"class = "text-left">{{obj.CHID}}</td>
          <td style = "padding:14px;"class = "text-left"> {{obj.Desc}}</td>
@@ -323,7 +327,7 @@
 
    </thead>
    <tbody class="table-hover">
-     {% for obj in volunteering %}
+     {% for obj in volunteer %}
        <tr>
          <td style = "padding:14px;"class = "text-left">{{obj.VolunID}}</td>
          <td style = "padding:14px;"class = "text-left"> {{obj.Desc}}</td>
@@ -352,7 +356,7 @@
 
    </thead>
    <tbody class="table-hover">
-     {% for obj in professional %}
+     {% for obj in pro %}
        <tr>
          <td style = "padding:14px;"class = "text-left">{{obj.ProfID}}</td>
          <td style = "padding:14px;"class = "text-left"> {{obj.Desc}}</td>
@@ -368,8 +372,6 @@
     </section>
 </div>
 <!-- todo Awards, Clubs, Volunteering, Professional Dev -->
-
-
 
 
 

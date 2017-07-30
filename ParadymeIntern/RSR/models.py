@@ -68,7 +68,7 @@ class Person(models.Model):
     PhoneNumber = models.CharField("Phone", max_length = 50,default = 0)
     Resume = models.FileField(upload_to = 'resumes', null = True) # null = True for testing purposes
     CreationDate = models.DateTimeField("Created On", auto_now_add=True, blank=True)
-    LastUpdated = models.DateTimeField("Update", blank = True, null= True)
+    LastUpdated = models.DateTimeField("Update", blank = True, auto_now=True, null = True)
     CreatedBy = models.ForeignKey(settings.AUTH_USER_MODEL, null = True) # null = True for testing purposes
     Linkedin = models.CharField("LinkedIn", max_length = 70, default = "None")
     GitHub = models.CharField("GitHub", max_length = 70, default = "None")
@@ -93,6 +93,9 @@ class OCR(models.Model):
     NewPath = models.ForeignKey(Person, blank=True, null=True)
 
 class Major(models.Model):
+    Major_Choices = (('Major', 'Major'),
+    ('Minor', 'Minor')
+)
     def get_absolute_url(self):
         return reverse('major_detail', args=[str(self.id)])
 
@@ -106,7 +109,7 @@ class Major(models.Model):
 
     Name = models.CharField("Major", max_length=50,default = "None")
     Dept = models.CharField("Department", max_length=50,default = "None")
-    MajorMinor = models.CharField("Major/Minor", max_length=50,default = "None")
+    MajorMinor = models.CharField("Major/Minor", max_length=50,choices = Major_Choices, default = "Major")
 
 
 class School(models.Model):
@@ -279,6 +282,7 @@ class Volunteering(models.Model):
             yield (field, value)
 
     Name = models.CharField("Volunteering Name", max_length=100,default = "None")
+    Volunteer = models.ManyToManyField(Person, through='PersonToVolunteering')
 
 
 
@@ -363,6 +367,6 @@ class PersonToSchool(models.Model):
     SchoolID = models.ForeignKey(School,  on_delete=models.CASCADE)
     GradDate = models.CharField("Graduation Date", max_length=20,default = "None")
     GPA = models.FloatField("GPA", max_length=20,default = "None")
-    CourseID = models.ForeignKey(Coursework,  on_delete=models.CASCADE)
+    #CourseID = models.ForeignKey(Coursework,  on_delete=models.CASCADE)
     PersonID = models.ForeignKey(Person,  on_delete=models.CASCADE)
     MajorID = models.ForeignKey(Major,  on_delete=models.CASCADE)

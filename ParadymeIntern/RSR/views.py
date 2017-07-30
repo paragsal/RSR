@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from .models import *
 import docx2txt
+from django.utils import timezone
 
 # Create your views here.
 #=======
@@ -13,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.forms import ModelForm
 
 from RSR.models import *
-from RSR.forms import DocumentForm
+from RSR.forms import *
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import logout
 from .filters import *
@@ -21,6 +22,8 @@ from .filters import *
 from django.db.models import Q
 from RSR.persondetails import Detail
 from RSR.persondetails2 import Detail2
+from django.views.generic.edit import UpdateView
+
 
 ### json Parsing ##
 import json
@@ -123,9 +126,11 @@ def uploaddoc(request):
                             elif key == "github":
                                 person.GitHub = js[label][key]
                         person.Resume = temp_doc.docfile
+                        person.TypeResume = temp_doc.type
                         person.save()
 
-                    if label == "skills":
+
+                    elif label == "skills":
                         for key in js[label]:
                             #check to see if skill exists
                             query_set=Skills.objects.all()
@@ -140,6 +145,163 @@ def uploaddoc(request):
                             skill_to_person = PersonToSkills(SkillsID = query_set, PersonID = person,YearsOfExperience = key["YearsOfExperience"])
                             skill_to_person.save()
 
+                    elif label == "work":
+                        for key in js[label]:
+                            #check to see if company exists
+                            query_set=Company.objects.all()
+                            query_set=query_set.filter(Name__icontains=key["company"])
+                            #if company does not exist create skill
+                            if not query_set:
+                                query_set = Company(Name = key["company"])
+                                query_set.save()
+                            #if company does exist, grab first match from queryset
+                            else:
+                                query_set = query_set[0]
+                            #intermediary table stuff
+                            company_to_person = PersonToCompany(CompanyID = query_set, PersonID = person,
+                                Title = key["title"],
+                                ExperienceOnJob = key["experience"],
+                                StartDate = key["startDate"],
+                                EndDate = key["endDate"],
+                                Desc = key["summary"])
+                            company_to_person.save()
+
+                    elif label == "education":
+                        for key in js[label]:
+                            #check to see if School exists
+                            query_set=School.objects.all()
+                            query_set=query_set.filter(Name__icontains=key["school"]["name"]).filter(DegreeLevel = key["school"]["degreeLevel"])
+                            #if School does not exist create skill
+                            if not query_set:
+                                query_set = School(Name = key["school"]["name"], DegreeLevel = key["school"]["degreeLevel"])
+                                query_set.save()
+                            #if School does exist, grab first match from queryset
+                            else:
+                                query_set = query_set[0]
+
+                            # NOW DO MAJOR
+                            query_set_1=Major.objects.all()
+                            query_set_1=query_set_1.filter(Name__icontains=key["major"]["major"]).filter(Dept__icontains = key["major"]["dept"]).filter(MajorMinor__icontains = key["major"]["major/minor"])
+                            if not query_set_1:
+                                query_set_1 = Major(Name = key["major"]["major"], Dept = key["major"]["dept"], MajorMinor = key["major"]["major/minor"])
+                                query_set_1.save()
+                            #if School does exist, grab first match from queryset
+                            else:
+                                query_set_1 = query_set_1[0]
+
+                            #intermediary table stuff
+                            ed_to_person = PersonToSchool(SchoolID = query_set, PersonID = person, MajorID = query_set_1,
+                                GPA = key["GPA"],
+                                GradDate = key["gradDate"])
+                            ed_to_person.save()
+
+
+                    elif label == "sideprojects":
+                        for key in js[label]:
+                            #check to see if project exists
+                            query_set=SideProject.objects.all()
+                            query_set=query_set.filter(Name__icontains=key["name"])
+                            #if project does not exist create project
+                            if not query_set:
+                                query_set = SideProject(Name = key["name"])
+                                query_set.save()
+                            #if project does exist, grab first match from queryset
+                            else:
+                                query_set = query_set[0]
+                            #intermediary table stuff
+                            project_to_person = PersonToSide(SideID = query_set, PersonID = person, Desc = key["description"])
+                            project_to_person.save()
+
+                    elif label == "award":
+                        for key in js[label]:
+                            #check to see if Award exists
+                            query_set=Awards.objects.all()
+                            query_set=query_set.filter(Name__icontains=key["name"])
+                            #if Award does not exist create Award
+                            if not query_set:
+                                query_set = Awards(Name = key["name"])
+                                query_set.save()
+                            #if Award does exist, grab first match from queryset
+                            else:
+                                query_set = query_set[0]
+                            #intermediary table stuff
+                            awards_to_person = PersonToAwards(AwardID = query_set, PersonID = person, Desc = key["description"])
+                            awards_to_person.save()
+
+                    elif label == "clearance":
+                        query_set = Clearance.objects.all()
+                        query_set = query_set.filter(ClearanceLevel = js[label]["level"])
+                        if not query_set:
+                            query_set = Clearance(ClearanceLevel=js[label]["level"])
+                            query_set.save()
+                        else:
+                            query_set = query_set[0]
+                        cl_to_person = PersonToClearance(PersonID=person, ClearanceLevel = query_set)
+                        cl_to_person.save()
+
+                    elif label == "languages":
+                        for key in js[label]:
+                            # check to see if language exists
+                            query_set = LanguageSpoken.objects.all()
+                            query_set = query_set.filter(Language__icontains=key["language"])
+                            # if language does not exist create language
+                            if not query_set:
+                                query_set = LanguageSpoken(Language=key["language"])
+                                query_set.save()
+                            # if language does exist, grab first match from queryset
+                            else:
+                                query_set = query_set[0]
+                            # intermediary table stuff
+                            language_to_person = PersonToLanguage(LangID=query_set, PersonID=person)
+                            language_to_person.save()
+
+                    elif label == "clubs":
+                        for key in js[label]:
+                            # check to see if club exists
+                            query_set = Clubs_Hobbies.objects.all()
+                            query_set = query_set.filter(Name__icontains=key["name"])
+                            # if club does not exist create club
+                            if not query_set:
+                                query_set = Clubs_Hobbies(Name=key["name"])
+                                query_set.save()
+                            # if club does exist, grab first match from queryset
+                            else:
+                                query_set = query_set[0]
+                            # intermediary table stuff
+                            club_to_person = PersonToClubs_Hobbies(CHID=query_set, PersonID=person, Desc=key["description"])
+                            club_to_person.save()
+
+                    elif label == "volunteering":
+                        for key in js[label]:
+                            # check to see if volunteer exists
+                            query_set = Volunteering.objects.all()
+                            query_set = query_set.filter(Name__icontains=key["name"])
+                            # if volunteer does not exist create volunteer
+                            if not query_set:
+                                query_set = Volunteering(Name=key["name"])
+                                query_set.save()
+                            # if volunteer does exist, grab first match from queryset
+                            else:
+                                query_set = query_set[0]
+                            # intermediary table stuff
+                            volunteer_to_person = PersonToVolunteering(VolunID=query_set, PersonID=person, Desc=key["description"])
+                            volunteer_to_person.save()
+
+                    elif label == "course":
+                        for key in js[label]:
+                            # check to see if course exists
+                            query_set = Coursework.objects.all()
+                            query_set = query_set.filter(Name__icontains=key["name"])
+                            # if course does not exist create course
+                            if not query_set:
+                                query_set = Coursework(Name=key["name"])
+                                query_set.save()
+                            # if course does exist, grab first match from queryset
+                            else:
+                                query_set = query_set[0]
+                            # intermediary table stuff
+                            course_to_person = PersonToCourse(CourseID=query_set, PersonID=person,Desc=key["description"])
+                            course_to_person.save()
 
 
             return HttpResponseRedirect(reverse('RSR:uploaddoc'))
@@ -148,6 +310,26 @@ def uploaddoc(request):
 
     documents = Document.objects.all()
     return render(request,'index.html',{'documents': documents, 'form': form})
+
+def person_edit(request, person_id):
+	instance = get_object_or_404(Person, id=person_id)
+	form = PersonForm(request.POST or None, instance=instance)
+   
+
+	if form.is_valid():
+		form.save()
+		
+		return HttpResponseRedirect(reverse('RSR:detail', args=[instance.pk]))
+	context = {
+		'form' : form,
+		'pk' : person_id,
+		'person':instance
+	}
+
+    
+	return render(request, 'person_update_form.html', context)
+
+
 
 
 @login_required
@@ -185,6 +367,7 @@ def detail(request,pk):
     Company = detail_dic['PersonToCompany']
     Clubs = detail_dic['PersonToClubs_Hobbies']
     Volunteer = detail_dic['PersonToVolunteering']
+    Award = detail_dic['PersonToAwards']
     context = { 
                 'person':person,
                 'list': related_obj_list,
@@ -198,6 +381,7 @@ def detail(request,pk):
                 'company':Company,
                 'clubs':Clubs,
                 'volunteer':Volunteer,
+                'award':Award,
                 }
 
     return render(request, 'SearchExport/detail.html', context)
